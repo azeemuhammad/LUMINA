@@ -40,8 +40,13 @@ class _ResultsScreenState extends State<ResultsScreen> {
             child: Column(
               children: [
                 const Text(
-                  "AI Restoration Successful",
+                  "Neural Restoration Successful",
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "4x Upscaled • Enhanced Details",
+                  style: TextStyle(color: Colors.greenAccent),
                 ),
                 const SizedBox(height: 30),
                 if (widget.enhancedImage != null)

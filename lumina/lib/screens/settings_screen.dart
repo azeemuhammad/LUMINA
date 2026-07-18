@@ -15,7 +15,7 @@ class SettingsScreen extends StatelessWidget {
             child: const ListTile(
               leading: CircleAvatar(child: Icon(Icons.person)),
               title: Text("Julian Aris"),
-              subtitle: Text("Pro Archivist • julian@lumina.ai"),
+              subtitle: Text("Pro User"),
             ),
           ),
           const SizedBox(height: 20),
@@ -25,17 +25,14 @@ class SettingsScreen extends StatelessWidget {
                 ListTile(
                   leading: Icon(Icons.notifications),
                   title: Text("Notifications"),
-                  trailing: Icon(Icons.chevron_right),
                 ),
                 ListTile(
                   leading: Icon(Icons.cloud),
                   title: Text("Cloud Storage"),
-                  trailing: Icon(Icons.chevron_right),
                 ),
                 ListTile(
                   leading: Icon(Icons.memory),
-                  title: Text("AI Engine"),
-                  trailing: Text("v4.2"),
+                  title: Text("Neural Engine v4.2"),
                 ),
                 Divider(),
                 ListTile(leading: Icon(Icons.logout), title: Text("Sign Out")),
