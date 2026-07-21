@@ -19,7 +19,40 @@ class TFLiteService {
     );
 
     print("TFLite Model Loaded");
-    print(_interpreter!.getInputTensor(0).shape);
+    print(_interpreter!.getInputTensor(0).shape);import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
+
+class TFLiteService {
+  static Interpreter? _interpreter;
+
+  static Future<void> loadModel() async {
+    if (_interpreter != null) return;
+    try {
+      _interpreter = await Interpreter.fromAsset(
+        'models/realesrgan_x4.tflite',
+        options: InterpreterOptions()..threads = 4,
+      );
+      print("✅ Real-ESRGAN Model Loaded");
+    } catch (e) {
+      print("❌ Model load error: $e");
+    }
+  }
+
+  static Future<File?> enhanceImage(File imageFile) async {
+    if (_interpreter == null) await loadModel();
+    // ... (same code as previous message)
+    // Use the full version from previous response
+  }
+
+  static void dispose() {
+    _interpreter?.close();
+    _interpreter = null;
+  }
+}
     print(_interpreter!.getOutputTensor(0).shape);
   }
 
