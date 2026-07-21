@@ -3,14 +3,12 @@ import 'dart:io';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import '../widgets/glass_card.dart';
-import '../services/ai_service.dart';
+import '../services/tflite_service.dart';
 import 'results_screen.dart';
 
 class ProcessingScreen extends StatefulWidget {
   final File image;
-
   const ProcessingScreen({super.key, required this.image});
-
   @override
   State<ProcessingScreen> createState() => _ProcessingScreenState();
 }
@@ -26,38 +24,31 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   }
 
   Future<void> _startNeuralProcessing() async {
-    // Progress animation
-    for (double i = 0; i <= 1.0; i += 0.08) {
-      await Future.delayed(const Duration(milliseconds: 180));
+    for (double i = 0; i <= 0.6; i += 0.1) {
+      await Future.delayed(const Duration(milliseconds: 120));
       setState(() => progress = i);
     }
 
-    // Try Cloud Neural Upscaling first
-    enhancedImage = await AIService.neuralUpscale(widget.image);
+    enhancedImage = await TFLiteService.enhanceImage(widget.image);
 
-    // Local fallback if API fails
     if (enhancedImage == null) {
+      // Basic fallback
       final bytes = await widget.image.readAsBytes();
       img.Image? image = img.decodeImage(bytes);
-
       if (image != null) {
-        // Neural-like enhancements
-        image = img.gaussianBlur(image, radius: 0);
-        image = img.sharpen(image, amount: 2.8);
-        image = img.adjustColor(image, saturation: 1.45, gamma: 0.95);
-        image = img.copyResize(
-          image,
-          width: (image.width * 2).clamp(512, 2048),
-        );
-
+        image = img.sharpen(image, amount: 2.0);
+        image = img.adjustColor(image, saturation: 1.3);
         final tempDir = await getTemporaryDirectory();
-        enhancedImage = await File(
-          '${tempDir.path}/enhanced_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ).writeAsBytes(img.encodeJpg(image, quality: 95));
+        enhancedImage = await File('${tempDir.path}/enhanced.jpg')
+            .writeAsBytes(img.encodeJpg(image, quality: 90));
       }
     }
 
-    // Navigate to results
+    for (double i = 0.6; i <= 1.0; i += 0.1) {
+      await Future.delayed(const Duration(milliseconds: 80));
+      setState(() => progress = i);
+    }
+
     if (mounted) {
       Navigator.pushReplacement(
         context,
@@ -80,37 +71,22 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.auto_awesome,
-                size: 60,
-                color: Color(0xFF4CD7F6),
-              ),
+              const Icon(Icons.auto_awesome,
+                  size: 60, color: Color(0xFF4CD7F6)),
               const SizedBox(height: 20),
-              const Text(
-                "Neural Restoration in Progress",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "4x Upscaling • Detail Enhancement",
-                style: TextStyle(color: Colors.grey),
-              ),
+              const Text("Neural Restoration in Progress",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+              const Text("Real-ESRGAN • Offline",
+                  style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 40),
               Image.file(widget.image, height: 260, fit: BoxFit.contain),
               const SizedBox(height: 40),
               SizedBox(
                 width: 280,
                 child: LinearProgressIndicator(
-                  value: progress,
-                  color: const Color(0xFF4CD7F6),
-                  backgroundColor: Colors.white24,
-                ),
+                    value: progress, color: const Color(0xFF4CD7F6)),
               ),
-              const SizedBox(height: 12),
-              Text(
-                "${(progress * 100).toInt()}% Complete",
-                style: const TextStyle(fontSize: 16),
-              ),
+              Text("${(progress * 100).toInt()}% Complete"),
             ],
           ),
         ),
