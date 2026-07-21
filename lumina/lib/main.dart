@@ -8,7 +8,6 @@ void main() {
 
 class LuminaAIApp extends StatelessWidget {
   const LuminaAIApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
