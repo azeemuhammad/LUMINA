@@ -1,26 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-
-import 'package:flutter/services.dart';
-import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
-
-class TFLiteService {
-  static Interpreter? _interpreter;
-
-  /// Load model
-  static Future<void> loadModel() async {
-    if (_interpreter != null) return;
-
-    _interpreter = await Interpreter.fromAsset(
-      'models/realesrgan_x4.tflite',
-      options: InterpreterOptions()..threads = 4,
-    );
-
-    print("TFLite Model Loaded");
-    print(_interpreter!.getInputTensor(0).shape);import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
@@ -31,56 +10,45 @@ class TFLiteService {
 
   static Future<void> loadModel() async {
     if (_interpreter != null) return;
+
     try {
       _interpreter = await Interpreter.fromAsset(
         'models/realesrgan_x4.tflite',
-        options: InterpreterOptions()..threads = 4,
+        options: InterpreterOptions()
+          ..threads = 4
+          ..useNnapiForAndroid = true, // Hardware acceleration
       );
-      print("✅ Real-ESRGAN Model Loaded");
+
+      print("✅ Real-ESRGAN-x4plus Model Loaded Successfully!");
+      print("Input shape: ${_interpreter!.getInputTensor(0).shape}");
+      print("Output shape: ${_interpreter!.getOutputTensor(0).shape}");
     } catch (e) {
-      print("❌ Model load error: $e");
+      print("❌ Model loading failed: $e");
     }
   }
 
-  static Future<File?> enhanceImage(File imageFile) async {
-    if (_interpreter == null) await loadModel();
-    // ... (same code as previous message)
-    // Use the full version from previous response
-  }
-
-  static void dispose() {
-    _interpreter?.close();
-    _interpreter = null;
-  }
-}
-    print(_interpreter!.getOutputTensor(0).shape);
-  }
-
-  /// Enhance Image
   static Future<File?> enhanceImage(File imageFile) async {
     if (_interpreter == null) {
       await loadModel();
     }
 
     try {
-      // Read image
-      final image = img.decodeImage(await imageFile.readAsBytes());
+      final bytes = await imageFile.readAsBytes();
+      img.Image? original = img.decodeImage(bytes);
+      if (original == null) return null;
 
-      if (image == null) {
-        return null;
-      }
+      // Real-ESRGAN usually expects smaller patches for memory efficiency
+      const int inputSize = 256;
+      final resized =
+          img.copyResize(original, width: inputSize, height: inputSize);
 
-      // Resize to model input size
-      final resized = img.copyResize(image, width: 256, height: 256);
-
-      // Convert to Float32 input
+      // Input tensor: [1, 256, 256, 3]
       var input = List.generate(
         1,
         (_) => List.generate(
-          256,
-          (y) => List.generate(256, (x) {
+          inputSize,
+          (y) => List.generate(inputSize, (x) {
             final pixel = resized.getPixel(x, y);
-
             return [pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0];
           }),
         ),
@@ -90,8 +58,8 @@ class TFLiteService {
       var output = List.generate(
         1,
         (_) => List.generate(
-          256,
-          (_) => List.generate(256, (_) => List.filled(3, 0.0)),
+          inputSize,
+          (_) => List.generate(inputSize, (_) => List.filled(3, 0.0)),
         ),
       );
 
@@ -99,30 +67,26 @@ class TFLiteService {
       _interpreter!.run(input, output);
 
       // Convert output to image
-      img.Image result = img.Image(width: 256, height: 256);
-
-      for (int y = 0; y < 256; y++) {
-        for (int x = 0; x < 256; x++) {
-          int r = (output[0][y][x][0] * 255).clamp(0, 255).toInt();
-          int g = (output[0][y][x][1] * 255).clamp(0, 255).toInt();
-          int b = (output[0][y][x][2] * 255).clamp(0, 255).toInt();
-
+      img.Image result = img.Image(width: inputSize, height: inputSize);
+      for (int y = 0; y < inputSize; y++) {
+        for (int x = 0; x < inputSize; x++) {
+          final r = (output[0][y][x][0] * 255).clamp(0, 255).toInt();
+          final g = (output[0][y][x][1] * 255).clamp(0, 255).toInt();
+          final b = (output[0][y][x][2] * 255).clamp(0, 255).toInt();
           result.setPixelRgb(x, y, r, g, b);
         }
       }
 
       // Save enhanced image
-      final dir = await getTemporaryDirectory();
-
+      final tempDir = await getTemporaryDirectory();
       final outputFile = File(
-        '${dir.path}/enhanced_${DateTime.now().millisecondsSinceEpoch}.png',
+        '${tempDir.path}/enhanced_${DateTime.now().millisecondsSinceEpoch}.png',
       );
 
       await outputFile.writeAsBytes(Uint8List.fromList(img.encodePng(result)));
-
       return outputFile;
     } catch (e) {
-      print(e);
+      print('TFLite Error: $e');
       return null;
     }
   }
