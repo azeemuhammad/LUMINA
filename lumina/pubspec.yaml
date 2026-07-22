@@ -1,5 +1,5 @@
 name: lumina_ai
-description: Offline AI Photo Enhancer
+description: Offline AI Photo Enhancer with Real-ESRGAN
 
 publish_to: 'none'
 version: 1.0.0+1
@@ -15,6 +15,8 @@ dependencies:
   tflite_flutter: ^0.10.4
   confetti: ^0.7.0
   share_plus: ^7.0.0
+  image_picker: ^1.1.2   # ← Added (missing)
+  google_fonts: ^6.2.1   # ← Added for AppTheme
 
 dev_dependencies:
   flutter_test:

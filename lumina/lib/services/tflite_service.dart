@@ -10,51 +10,48 @@ class TFLiteService {
 
   static Future<void> loadModel() async {
     if (_interpreter != null) return;
-
     try {
       _interpreter = await Interpreter.fromAsset(
         'models/realesrgan_x4.tflite',
         options: InterpreterOptions()
           ..threads = 4
-          ..useNnapiForAndroid = true, // Hardware acceleration
+          ..useNnapiForAndroid = true
+          ..useGpuDelegateV2ForAndroid = true,
       );
-
-      print("✅ Real-ESRGAN-x4plus Model Loaded Successfully!");
-      print("Input shape: ${_interpreter!.getInputTensor(0).shape}");
-      print("Output shape: ${_interpreter!.getOutputTensor(0).shape}");
+      print("✅ Real-ESRGAN Model Loaded!");
     } catch (e) {
-      print("❌ Model loading failed: $e");
+      print("❌ Model load failed: $e");
     }
   }
 
   static Future<File?> enhanceImage(File imageFile) async {
-    if (_interpreter == null) {
-      await loadModel();
-    }
+    await loadModel();
+    if (_interpreter == null) return null;
 
     try {
       final bytes = await imageFile.readAsBytes();
       img.Image? original = img.decodeImage(bytes);
       if (original == null) return null;
 
-      // Real-ESRGAN usually expects smaller patches for memory efficiency
+      // Resize to model input size (adjust if your model uses different size)
       const int inputSize = 256;
       final resized =
           img.copyResize(original, width: inputSize, height: inputSize);
 
-      // Input tensor: [1, 256, 256, 3]
-      var input = List.generate(
-        1,
-        (_) => List.generate(
+      // Prepare input [1, 256, 256, 3]
+      var input = [
+        List.generate(
           inputSize,
-          (y) => List.generate(inputSize, (x) {
-            final pixel = resized.getPixel(x, y);
-            return [pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0];
-          }),
-        ),
-      );
+          (y) => List.generate(
+            inputSize,
+            (x) {
+              final pixel = resized.getPixel(x, y);
+              return [pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0];
+            },
+          ),
+        )
+      ];
 
-      // Output tensor
       var output = List.generate(
         1,
         (_) => List.generate(
@@ -63,10 +60,9 @@ class TFLiteService {
         ),
       );
 
-      // Run inference
       _interpreter!.run(input, output);
 
-      // Convert output to image
+      // Convert back to image
       img.Image result = img.Image(width: inputSize, height: inputSize);
       for (int y = 0; y < inputSize; y++) {
         for (int x = 0; x < inputSize; x++) {
@@ -77,13 +73,11 @@ class TFLiteService {
         }
       }
 
-      // Save enhanced image
       final tempDir = await getTemporaryDirectory();
       final outputFile = File(
-        '${tempDir.path}/enhanced_${DateTime.now().millisecondsSinceEpoch}.png',
-      );
+          '${tempDir.path}/enhanced_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await outputFile.writeAsBytes(img.encodeJpg(result, quality: 95));
 
-      await outputFile.writeAsBytes(Uint8List.fromList(img.encodePng(result)));
       return outputFile;
     } catch (e) {
       print('TFLite Error: $e');

@@ -23,10 +23,15 @@ class _ResultsScreenState extends State<ResultsScreen> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(
-      duration: const Duration(seconds: 4),
-    );
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 5));
     _confettiController.play();
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   @override
@@ -39,22 +44,19 @@ class _ResultsScreenState extends State<ResultsScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const Text(
-                  "Neural Restoration Successful",
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                ),
+                const Text("Neural Restoration Successful",
+                    style:
+                        TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
-                Text(
-                  "4x Upscaled • Enhanced Details",
-                  style: TextStyle(color: Colors.greenAccent),
-                ),
+                const Text("4x Enhanced • Sharper Details",
+                    style: TextStyle(color: Colors.greenAccent)),
                 const SizedBox(height: 30),
                 if (widget.enhancedImage != null)
                   SizedBox(
                     height: 450,
                     child: ComparisonSlider(
-                      beforeImage: widget.originalImage.path,
-                      afterImage: widget.enhancedImage!.path,
+                      beforeImage: widget.originalImage,
+                      afterImage: widget.enhancedImage!,
                     ),
                   ),
                 const SizedBox(height: 40),
@@ -62,13 +64,13 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {}, // TODO: Implement download
                       icon: const Icon(Icons.download),
                       label: const Text("Download"),
                     ),
                     const SizedBox(width: 20),
                     ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {}, // TODO: Implement share
                       icon: const Icon(Icons.share),
                       label: const Text("Share"),
                     ),

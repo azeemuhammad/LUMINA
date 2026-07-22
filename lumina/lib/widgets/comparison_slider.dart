@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class ComparisonSlider extends StatefulWidget {
-  final String beforeImage;
-  final String afterImage;
+  final File beforeImage;
+  final File afterImage;
 
   const ComparisonSlider({
     super.key,
@@ -21,28 +22,31 @@ class _ComparisonSliderState extends State<ComparisonSlider> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // After image (right side)
         ClipRect(
           child: Align(
             alignment: Alignment.centerRight,
             widthFactor: 1 - _sliderValue,
-            child: Image.network(
+            child: Image.file(
               widget.afterImage,
               fit: BoxFit.cover,
               height: 400,
             ),
           ),
         ),
+        // Before image (left side)
         ClipRect(
           child: Align(
             alignment: Alignment.centerLeft,
             widthFactor: _sliderValue,
-            child: Image.network(
+            child: Image.file(
               widget.beforeImage,
               fit: BoxFit.cover,
               height: 400,
             ),
           ),
         ),
+        // Slider
         Positioned.fill(
           child: SliderTheme(
             data: SliderThemeData(
